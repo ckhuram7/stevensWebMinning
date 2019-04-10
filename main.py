@@ -14,6 +14,10 @@ import json					# Tools to Handle the output and input to JSON based data
 from random import randint	# Used to Randomly generate the time to wait between the requests
 from time import sleep		# Function used to pause the program to allow for some wait time between requests
 import datetime				# Module Used for Date related functions 
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+
 
 class Nsgclass:
 	"""
@@ -226,6 +230,7 @@ class Nsgclass:
 		self.log.info("Checking to see how many files exist in {}".format(folderToCheck))
 		fileInPath = [os.path.join(folderToCheck, filePath) for filePath in os.listdir(folderToCheck) if os.path.isfile(os.path.join(folderToCheck, filePath))]
 		dirInPath =  [dirPath for dirPath in os.listdir(folderToCheck) if os.path.isdir(os.path.join(folderToCheck, dirPath))]
+		self.log.info("Total of {} file found in directory".format(len(fileInPath)))
 		return fileInPath
 	
 	def processFile(self, fileName):
@@ -244,26 +249,142 @@ class Nsgclass:
 			tempFile = listOfLines[newLines[0]+1:]
 			for line in tempFile:
 				line.replace("\n", " ")
-				myString += line.replace("\n", " ")
+				myString += line.replace("\n", " ").replace("\t", " ")
 		return myString
 
-	def createCSVFromDataFiles(self, fileList):
+	def createCSVFromDataFiles(self, fileList, createFile, label):
 		"""
 		This function will look at a list of files will return a created csv that will include all of the text records from the document
 		"""
 		tempList = []
 		for fileName in fileList:
-			tempList.append([fileName, self.processFile(fileName = fileName)])
+			tempList.append([fileName, label, self.processFile(fileName = fileName)])
 		
-		self.createCSVFromSearchData(	titleList = ['Filename', 'Review'], 
-										dataArrays = tempList, 
-										fileName = "CSVDBTest")
+		if createFile == True:
+			self.createCSVFromSearchData(	titleList = ['Filename', "Label", 'Review'], 
+											dataArrays = tempList, 
+											fileName = "CSVDBTest")
+		else:
+			return tempList
+
+	def createTestDataFile(self, tabbedData = True):
+		"""
+		This Function will create the test data set
+		"""
+		# Creating Test Data Files
+		windowsData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/comp.windows.x"), 
+															label = 'comp', 
+															createFile = False)
+		baseballData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/rec.sport.baseball"), 
+															label = 'sport', 
+															createFile = False)
+		polMiscData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/talk.politics.misc"), 
+															label = 'politics', 
+															createFile = False)
+		autosData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/rec.autos"), 
+														label = 'rec', 
+														createFile = False)
+		if tabbedData  == True:
+			self. createTabbedTextFileFromSearchData(	dataArrays = windowsData + baseballData + polMiscData + autosData, 
+														fileName = "TEST_DATA")
+		else:
+			self.createCSVFromSearchData(	titleList = ['Filename', "Label", 'Review'], 
+											dataArrays = windowsData + baseballData + polMiscData + autosData, 
+											fileName = "TEST_DATA")
+
+	def createTrainDataFile(self,tabbedData = True):
+		"""
+		This Function will create the test data set
+		"""
+		# Creating Test Data Files for Computer 
+		graphicsData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/comp.graphics"), 
+													label = 'comp', 
+													createFile = False)
+		windowsData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/comp.os.ms-windows.misc"), 
+													label = 'comp', 
+													createFile = False)
+		ibmData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/comp.sys.ibm.pc.hardware"), 
+												label = 'comp', 
+												createFile = False)
+		macData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/comp.sys.mac.hardware"), 
+												label = 'comp', 
+												createFile = False)
+		# This is the hockey data for Sports
+		hockeyData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/rec.sport.hockey"), 
+													label = 'sport', 
+													createFile = False)
+		
+		polGunsData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/talk.politics.guns"), 
+													label = 'politics', 
+													createFile = False)
+		polMidEastData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/talk.politics.mideast"), 
+														label = 'politics', 
+														createFile = False)
+
+
+		autosData = self.createCSVFromDataFiles(	fileList=self.getFileStructure(folderToCheck= self.base + "/20_newsgroups/rec.motorcycles"), 
+													label = 'rec', 
+													createFile = False)
+		if tabbedData == True:
+			self. createTabbedTextFileFromSearchData(	dataArrays = 	graphicsData + windowsData + ibmData + macData + 
+														hockeyData + 
+														polGunsData + polMidEastData +
+														autosData, 
+														fileName = "TRAIN_DATA")
+		else:
+			self.createCSVFromSearchData(	titleList = ['Filename', "Label", 'Review'], 
+											dataArrays = 	graphicsData + windowsData + ibmData + macData + 
+															hockeyData + 
+															polGunsData + polMidEastData +
+															autosData, 
+											fileName = "TRAIN_DATA")
+
+	def loadData(self, fname):
+		reviews=[]
+		labels=[]
+		f=open(fname)
+		for line in f:
+			fileName,rating,review=line.strip().split('\t')  
+			reviews.append(review.lower())    
+			labels.append(rating)
+		f.close()
+		return reviews,labels
+
+	def trainModel(self):
+		"""
+		Will do the model training
+		"""
+
+		rev_train,labels_train=self.loadData('TRAIN_DATA')
+		rev_test,labels_test=self.loadData('TEST_DATA')
+
+		#Build a counter based on the training dataset
+		counter = CountVectorizer()
+		counter.fit(rev_train)
+
+
+		#count the number of times each term appears in a document and transform each doc into a count vector
+		counts_train = counter.transform(rev_train)#transform the training data
+		counts_test = counter.transform(rev_test)#transform the testing data
+
+		#train classifier
+		clf = DecisionTreeClassifier()
+
+		#train all classifier on the same datasets
+		clf.fit(counts_train,labels_train)
+
+		#use hard voting to predict (majority voting)
+		pred=clf.predict(counts_test)
+
+		#print accuracy
+		print (accuracy_score(pred,labels_test))
 
 if __name__ == '__main__':
 	# For your own log file to avoid merge conflicts = Name the class something else
 	workerClass = Nsgclass(name = "Khuram", logging=True)
-	atheism  = workerClass.getFileStructure(folderToCheck= workerClass.base + "/20_newsgroups/alt.atheism")
-	workerClass.createCSVFromDataFiles(fileList=atheism)
+	workerClass.createTestDataFile()
+	workerClass.createTrainDataFile()
+	workerClass.trainModel()
 	"""
 	workerClass.createCSVFromSearchData(titleList = ['Critic Name', 'Critic Publication', 'Critic Rating',
 													 'Review', 'Date', 'Score', "Fresh Or Rotten"], 
