@@ -216,12 +216,54 @@ class Nsgclass:
 			for dataArray in dataArrays:
 				outputFile.write('\t'.join('"{}"'.format(tabbedData) for tabbedData in dataArray) + "\n" )
 
+	def getFileStructure(self, folderToCheck):
+		"""
+		This Function will check the folderToCheck and provide a list of the files that exist in\
+		in the folder in list format to allow the user to parse through.
 
+		@param	str	folderToCheck	The path or folder name to check for files
+		"""
+		self.log.info("Checking to see how many files exist in {}".format(folderToCheck))
+		fileInPath = [os.path.join(folderToCheck, filePath) for filePath in os.listdir(folderToCheck) if os.path.isfile(os.path.join(folderToCheck, filePath))]
+		dirInPath =  [dirPath for dirPath in os.listdir(folderToCheck) if os.path.isdir(os.path.join(folderToCheck, dirPath))]
+		return fileInPath
 	
+	def processFile(self, fileName):
+		"""
+		This function will read the file and remove the first portion of the data and only return information that we expect
+		"""
+		
+		# Line Numbers that are just NewLines
+		newLines = []
+		myString = ''
+		with open(fileName, 'r') as inputFile:
+			listOfLines = inputFile.readlines()
+			for iterObj, line in enumerate(listOfLines):
+				if line == "\n":
+					newLines.append(iterObj)
+			tempFile = listOfLines[newLines[0]+1:]
+			for line in tempFile:
+				line.replace("\n", " ")
+				myString += line.replace("\n", " ")
+		return myString
+
+	def createCSVFromDataFiles(self, fileList):
+		"""
+		This function will look at a list of files will return a created csv that will include all of the text records from the document
+		"""
+		tempList = []
+		for fileName in fileList:
+			tempList.append([fileName, self.processFile(fileName = fileName)])
+		
+		self.createCSVFromSearchData(	titleList = ['Filename', 'Review'], 
+										dataArrays = tempList, 
+										fileName = "CSVDBTest")
+
 if __name__ == '__main__':
 	# For your own log file to avoid merge conflicts = Name the class something else
 	workerClass = Nsgclass(name = "Khuram", logging=True)
-	
+	atheism  = workerClass.getFileStructure(folderToCheck= workerClass.base + "/20_newsgroups/alt.atheism")
+	workerClass.createCSVFromDataFiles(fileList=atheism)
 	"""
 	workerClass.createCSVFromSearchData(titleList = ['Critic Name', 'Critic Publication', 'Critic Rating',
 													 'Review', 'Date', 'Score', "Fresh Or Rotten"], 
