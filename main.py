@@ -17,7 +17,8 @@ import datetime				# Module Used for Date related functions
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
-
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
 
 class Nsgclass:
 	"""
@@ -326,9 +327,9 @@ class Nsgclass:
 													label = 'rec', 
 													createFile = False)
 		if tabbedData == True:
-			self. createTabbedTextFileFromSearchData(	dataArrays = 	graphicsData + windowsData + ibmData + macData + 
+			self. createTabbedTextFileFromSearchData(	dataArrays =  windowsData +
 														hockeyData + 
-														polGunsData + polMidEastData +
+														polMidEastData +
 														autosData, 
 														fileName = "TRAIN_DATA")
 		else:
@@ -368,8 +369,8 @@ class Nsgclass:
 		counts_test = counter.transform(rev_test)#transform the testing data
 
 		#train classifier
-		clf = DecisionTreeClassifier()
-
+		# clf = DecisionTreeClassifier()
+		clf = MLPClassifier(alpha=.01, learning_rate="adaptive", learning_rate_init=0.001, early_stopping=False, max_iter=200)
 		#train all classifier on the same datasets
 		clf.fit(counts_train,labels_train)
 
@@ -385,12 +386,3 @@ if __name__ == '__main__':
 	workerClass.createTestDataFile()
 	workerClass.createTrainDataFile()
 	workerClass.trainModel()
-	"""
-	workerClass.createCSVFromSearchData(titleList = ['Critic Name', 'Critic Publication', 'Critic Rating',
-													 'Review', 'Date', 'Score', "Fresh Or Rotten"], 
-										dataArrays = reviews, 
-										fileName = "CSVDB")
-	# This will show printed out data format for the returned reviews
-	for iterObj, review in enumerate(reviews):
-		print("Iter: {}, Review: {}".format(iterObj, review))
-	"""
