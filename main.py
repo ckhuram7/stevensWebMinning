@@ -19,6 +19,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
 
 class Nsgclass:
 	"""
@@ -327,9 +328,9 @@ class Nsgclass:
 													label = 'rec', 
 													createFile = False)
 		if tabbedData == True:
-			self. createTabbedTextFileFromSearchData(	dataArrays =  windowsData +
+			self. createTabbedTextFileFromSearchData(	dataArrays =  windowsData + macData +
 														hockeyData + 
-														polMidEastData +
+														polGunsData + polMidEastData +
 														autosData, 
 														fileName = "TRAIN_DATA")
 		else:
@@ -370,7 +371,9 @@ class Nsgclass:
 
 		#train classifier
 		# clf = DecisionTreeClassifier()
-		clf = MLPClassifier(alpha=.01, learning_rate="adaptive", learning_rate_init=0.001, early_stopping=False, max_iter=200)
+		# clf = LogisticRegression()
+		clf = MLPClassifier()
+		#clf = MLPClassifier(alpha=.01, learning_rate="adaptive", learning_rate_init=0.001, early_stopping=False, max_iter=200)
 		#train all classifier on the same datasets
 		clf.fit(counts_train,labels_train)
 
